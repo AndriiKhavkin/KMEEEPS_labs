@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_1b762d721418ae766d26310f0fa1f692 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+</head>
+<body>
+    
+    
+<style>
+    .panel-base {
+        position: fixed;
+        z-index: 9999;
+        background: rgba(255, 255, 255, 0.96);
+        padding: 10px;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+        font-family: 'Segoe UI', Arial, sans-serif;
+    }
+
+    .layer-panel {
+        top: 20px;
+        right: 20px;
+        width: 190px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .metric-panel {
+        top: 20px;
+        left: 20px;
+        width: 240px;
+        max-height: 75vh;
+        overflow-y: auto;
+    }
+
+    .legend-panel {
+        bottom: 30px;
+        left: 20px;
+        width: 250px;
+        font-size: 12px;
+    }
+
+    .btn {
+        padding: 8px;
+        border: none;
+        background: #f8f9fa;
+        cursor: pointer;
+        border-radius: 4px;
+        text-align: left;
+        font-size: 14px;
+    }
+
+    .btn:hover {
+        background: #e2e6ea;
+    }
+
+    .btn.active {
+        background: #007bff;
+        color: white;
+    }
+
+    .metric-radio {
+        margin: 6px 0;
+        display: flex;
+        align-items: flex-start;
+        gap: 6px;
+        font-size: 13px;
+        cursor: pointer;
+        line-height: 1.2;
+    }
+
+    .legend-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 4px;
+        color: white;
+        font-weight: bold;
+        margin-bottom: 2px;
+        border-radius: 3px;
+    }
+
+    .dynamic-marker {
+        border-radius: 50%;
+        border: 2px solid white;
+        color: white;
+        font-weight: bold;
+        font-size: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+        text-align: center;
+        line-height: 1.1;
+        padding: 2px;
+    }
+
+    .popup-chart-container {
+        width: 390px;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid #dee2e6;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="panel-base layer-panel" id="layerMenu"></div>
+<div class="panel-base metric-panel" id="metricMenu" style="display:none;"></div>
+<div class="panel-base legend-panel" id="legendMenu" style="display:none;"></div>
+
+<script>
+    const mapData = [{"name": "Станція моніторингу якості повітря на Бессарабській площі", "loc": [50.442, 30.521], "type": "air", "metrics": {"PM2.5": 18.4, "PM10": 32.7, "NO₂": 0.034, "SO₂": 0.012, "CO": 1.1, "O₃": 0.041, "Формальдегід": 0.003, "Індекс якості повітря": 58, "Рівень екологічного ризику": "Помірний"}}, {"name": "Пост контролю радіаційного фону біля НН ІАТЕ КПІ", "loc": [50.4487, 30.4566], "type": "rad", "metrics": {"Потужність експозиційної дози": 0.11, "Концентрація радіонуклідів у повітрі": 0.004, "Рівень забруднення поверхонь": 0.02, "Середньодобовий радіаційний фон": 0.1, "Коефіцієнт перевищення нормативу": 0.44, "Ризик радіаційного впливу": "Низький"}}, {"name": "Бюветний комплекс у парку «Нивки»", "loc": [50.4595, 30.4055], "type": "water", "metrics": {"pH": 7.1, "Жорсткість води": 6.4, "Нітрати": 28, "Хлориди": 42, "Сульфати": 76, "Залізо": 0.18, "Мікробіологічні показники": 1.0, "Індекс забрудненості води": 0.84, "Придатність для споживання": "Умовно придатна"}}, {"name": "Ділянка річки Дніпро біля Гідропарку", "loc": [50.4455, 30.576], "type": "water", "metrics": {"Температура води": 14.8, "pH": 7.5, "Розчинений кисень": 7.8, "БСК₅": 3.2, "Нафтопродукти": 0.04, "Нітрати": 21, "Фосфати": 0.31, "Індекс забрудненості поверхневих вод": 1.12, "Екологічний стан": "Задовільний"}}, {"name": "Головний корпус КПІ ім. Ігоря Сікорського", "loc": [50.4498, 30.4573], "type": "energy", "metrics": {"Споживання електроенергії": 43800, "Споживання теплової енергії": 390, "Споживання води": 820, "Споживання газу": 9.6, "Кількість користувачів будівлі": 1850, "Питоме енергоспоживання": 118, "Клас енергоефективності": "C", "Середньомісячне споживання ресурсів": 114.6}}, {"name": "Навчальний корпус НН ІАТЕ КПІ", "loc": [50.4486, 30.4569], "type": "energy", "metrics": {"Споживання електроенергії": 18700, "Споживання теплової енергії": 165, "Споживання води": 290, "Середня температура в приміщеннях": 20.8, "Кількість аудиторій": 42, "Споживання енергії на одиницю площі": 96, "Коефіцієнт енергоефективності": 0.72, "Потенціал енергозбереження": 14}}, {"name": "Центральний залізничний вокзал Києва", "loc": [50.441, 30.4886], "type": "econ", "metrics": {"Пасажиропотік": 72000, "Кількість прибулих поїздів": 94, "Кількість відправлених поїздів": 97, "Споживання електроенергії": 52000, "Кількість працівників": 1300, "Індекс транспортної активності": 1.24, "Середнє навантаження на інфраструктуру": "Високе", "Економічна активність об'єкта": 0.86}}, {"name": "Олександрівська клінічна лікарня", "loc": [50.4369, 30.5277], "type": "health", "metrics": {"Кількість звернень пацієнтів": 430, "Рівень захворюваності": 16.2, "Кількість госпіталізацій": 87, "Показник інвалідності": 2.3, "Медико-демографічний показник": 9.1, "Ризик захворюваності населення": 0.018, "Прогноз навантаження на установу": "Підвищений", "Інтегральний показник стану здоров'я": 0.74}}, {"name": "Завод «Енергія»", "loc": [50.38, 30.65], "type": "waste", "metrics": {"Обсяг твердих побутових відходів": 610, "Клас небезпеки відходів": 4, "Рівень токсичності": 4800, "Обсяг викидів у повітря": 0.37, "Індекс екологічної небезпеки": 0.63, "Рівень навантаження на довкілля": "Середній", "Коефіцієнт утилізації відходів": 0.71}}, {"name": "Бортницька станція аерації", "loc": [50.368, 30.676], "type": "water", "metrics": {"Обсяг стічних вод": 690000, "БСК₅ до очищення": 245, "БСК₅ після очищення": 18, "Вміст азоту": 12.4, "Вміст фосфору": 2.1, "Завислі речовини після очищення": 16, "Ефективність очищення стічних вод": 92.6, "Індекс забруднення стічних вод": 1.34, "Рівень екологічного ризику": "Контрольований"}}];
+    const mapLayersInfo = {"air": "🍃 Повітря", "rad": "☢️ Радіація", "water": "💧 Вода", "energy": "⚡ Енергетика", "econ": "💰 Економіка / транспорт", "health": "❤️ Здоров'я", "waste": "🗑️ Відходи"};
+    const mapInstanceName = "map_1b762d721418ae766d26310f0fa1f692";
+
+    let currentMarkerGroup = null;
+    let activeType = null;
+    let activeMetric = null;
+    let chartCounter = 0;
+
+    const colorScales = {
+        "PM2.5": [
+            {limit: 10, col: "#28a745", lbl: "Добре", range: "0 – 10"},
+            {limit: 25, col: "#ffc107", lbl: "Допустимо", range: "10 – 25"},
+            {limit: 50, col: "#fd7e14", lbl: "Підвищено", range: "25 – 50"},
+            {limit: Infinity, col: "#dc3545", lbl: "Небезпечно", range: "> 50"}
+        ],
+        "PM10": [
+            {limit: 20, col: "#28a745", lbl: "Добре", range: "0 – 20"},
+            {limit: 50, col: "#ffc107", lbl: "Допустимо", range: "20 – 50"},
+            {limit: 100, col: "#fd7e14", lbl: "Підвищено", range: "50 – 100"},
+            {limit: Infinity, col: "#dc3545", lbl: "Небезпечно", range: "> 100"}
+        ],
+        "NO₂": [
+            {limit: 0.02, col: "#28a745", lbl: "Норма", range: "0 – 0.02"},
+            {limit: 0.04, col: "#ffc107", lbl: "Допустимо", range: "0.02 – 0.04"},
+            {limit: 0.085, col: "#fd7e14", lbl: "Перевищено", range: "0.04 – 0.085"},
+            {limit: Infinity, col: "#dc3545", lbl: "Небезпечно", range: "> 0.085"}
+        ],
+        "SO₂": [
+            {limit: 0.015, col: "#28a745", lbl: "Норма", range: "0 – 0.015"},
+            {limit: 0.05, col: "#ffc107", lbl: "Допустимо", range: "0.015 – 0.05"},
+            {limit: 0.5, col: "#fd7e14", lbl: "Перевищено", range: "0.05 – 0.5"},
+            {limit: Infinity, col: "#dc3545", lbl: "Небезпечно", range: "> 0.5"}
+        ],
+        "CO": [
+            {limit: 1.0, col: "#28a745", lbl: "Норма", range: "0 – 1.0"},
+            {limit: 3.0, col: "#ffc107", lbl: "Допустимо", range: "1.0 – 3.0"},
+            {limit: 5.0, col: "#fd7e14", lbl: "Перевищено", range: "3.0 – 5.0"},
+            {limit: Infinity, col: "#dc3545", lbl: "Небезпечно", range: "> 5.0"}
+        ],
+        "O₃": [
+            {limit: 0.04, col: "#28a745", lbl: "Норма", range: "0 – 0.04"},
+            {limit: 0.08, col: "#ffc107", lbl: "Допустимо", range: "0.04 – 0.08"},
+            {limit: 0.12, col: "#fd7e14", lbl: "Підвищено", range: "0.08 – 0.12"},
+            {limit: Infinity, col: "#dc3545", lbl: "Небезпечно", range: "> 0.12"}
+        ],
+        "Формальдегід": [
+            {limit: 0.001, col: "#28a745", lbl: "Норма", range: "0 – 0.001"},
+            {limit: 0.003, col: "#ffc107", lbl: "Допустимо", range: "0.001 – 0.003"},
+            {limit: 0.035, col: "#fd7e14", lbl: "Перевищено", range: "0.003 – 0.035"},
+            {limit: Infinity, col: "#dc3545", lbl: "Небезпечно", range: "> 0.035"}
+        ],
+        "Індекс якості повітря": [
+            {limit: 50, col: "#28a745", lbl: "Добре", range: "0 – 50"},
+            {limit: 100, col: "#ffc107", lbl: "Помірно", range: "51 – 100"},
+            {limit: 150, col: "#fd7e14", lbl: "Шкідливо", range: "101 – 150"},
+            {limit: Infinity, col: "#dc3545", lbl: "Небезпечно", range: "> 150"}
+        ],
+
+        "Потужність експозиційної дози": [
+            {limit: 0.15, col: "#28a745", lbl: "Фоновий", range: "0 – 0.15"},
+            {limit: 0.30, col: "#ffc107", lbl: "Допустимий", range: "0.15 – 0.30"},
+            {limit: 0.50, col: "#fd7e14", lbl: "Підвищений", range: "0.30 – 0.50"},
+            {limit: Infinity, col: "#dc3545", lbl: "Небезпечний", range: "> 0.50"}
+        ],
+        "Концентрація радіонуклідів у повітрі": [
+            {limit: 0.001, col: "#28a745", lbl: "Фон", range: "0 – 0.001"},
+            {limit: 0.01, col: "#ffc107", lbl: "Допустимо", range: "0.001 – 0.01"},
+            {limit: 0.1, col: "#fd7e14", lbl: "Підвищено", range: "0.01 – 0.1"},
+            {limit: Infinity, col: "#dc3545", lbl: "Небезпечно", range: "> 0.1"}
+        ],
+        "Рівень забруднення поверхонь": [
+            {limit: 0.01, col: "#28a745", lbl: "Фон", range: "0 – 0.01"},
+            {limit: 0.05, col: "#ffc107", lbl: "Допустимо", range: "0.01 – 0.05"},
+            {limit: 0.1, col: "#fd7e14", lbl: "Підвищено", range: "0.05 – 0.1"},
+            {limit: Infinity, col: "#dc3545", lbl: "Небезпечно", range: "> 0.1"}
+        ],
+        "Середньодобовий радіаційний фон": [
+            {limit: 0.15, col: "#28a745", lbl: "Фоновий", range: "0 – 0.15"},
+            {limit: 0.30, col: "#ffc107", lbl: "Допустимий", range: "0.15 – 0.30"},
+            {limit: 0.50, col: "#fd7e14", lbl: "Підвищений", range: "0.30 – 0.50"},
+            {limit: Infinity, col: "#dc3545", lbl: "Небезпечний", range: "> 0.50"}
+        ],
+        "Коефіцієнт перевищення нормативу": [
+            {limit: 1.0, col: "#28a745", lbl: "Без перевищ.", range: "0 – 1"},
+            {limit: 1.5, col: "#ffc107", lbl: "Незначне", range: "1 – 1.5"},
+            {limit: 2.0, col: "#fd7e14", lbl: "Підвищене", range: "1.5 – 2"},
+            {limit: Infinity, col: "#dc3545", lbl: "Критичне", range: "> 2"}
+        ],
+
+        "pH": [
+            {limit: 5.5, col: "#dc3545", lbl: "Кисле", range: "0 – 5.5"},
+            {limit: 6.5, col: "#ffc107", lbl: "Слабокисле", range: "5.5 – 6.5"},
+            {limit: 8.5, col: "#28a745", lbl: "Норма", range: "6.5 – 8.5"},
+            {limit: Infinity, col: "#fd7e14", lbl: "Лужне", range: "> 8.5"}
+        ],
+        "Жорсткість води": [
+            {limit: 4, col: "#28a745", lbl: "М'яка", range: "0 – 4"},
+            {limit: 7, col: "#ffc107", lbl: "Середня", range: "4 – 7"},
+            {limit: 10, col: "#fd7e14", lbl: "Жорстка", range: "7 – 10"},
+            {limit: Infinity, col: "#dc3545", lbl: "Дуже жорстка", range: "> 10"}
+        ],
+        "Нітрати": [
+            {limit: 25, col: "#28a745", lbl: "Норма", range: "0 – 25"},
+            {limit: 50, col: "#ffc107", lbl: "Допустимо", range: "25 – 50"},
+            {limit: 100, col: "#fd7e14", lbl: "Підвищено", range: "50 – 100"},
+            {limit: Infinity, col: "#dc3545", lbl: "Небезпечно", range: "> 100"}
+        ],
+        "Хлориди": [
+            {limit: 100, col: "#28a745", lbl: "Норма", range: "0 – 100"},
+            {limit: 250, col: "#ffc107", lbl: "Допустимо", range: "100 – 250"},
+            {limit: 500, col: "#fd7e14", lbl: "Підвищено", range: "250 – 500"},
+            {limit: Infinity, col: "#dc3545", lbl: "Небезпечно", range: "> 500"}
+        ],
+        "Сульфати": [
+            {limit: 100, col: "#28a745", lbl: "Норма", range: "0 – 100"},
+            {limit: 250, col: "#ffc107", lbl: "Допустимо", range: "100 – 250"},
+            {limit: 500, col: "#fd7e14", lbl: "Підвищено", range: "250 – 500"},
+            {limit: Infinity, col: "#dc3545", lbl: "Небезпечно", range: "> 500"}
+        ],
+        "Залізо": [
+            {limit: 0.2, col: "#28a745", lbl: "Норма", range: "0 – 0.2"},
+            {limit: 0.5, col: "#ffc107", lbl: "Допустимо", range: "0.2 – 0.5"},
+            {limit: 1.0, col: "#fd7e14", lbl: "Підвищено", range: "0.5 – 1.0"},
+            {limit: Infinity, col: "#dc3545", lbl: "Високе", range: "> 1.0"}
+        ],
+        "Мікробіологічні показники": [
+            {limit: 1, col: "#28a745", lbl: "Норма", range: "0 – 1"},
+            {limit: 3, col: "#ffc107", lbl: "Допустимо", range: "1 – 3"},
+            {limit: 5, col: "#fd7e14", lbl: "Підвищено", range: "3 – 5"},
+            {limit: Infinity, col: "#dc3545", lbl: "Небезпечно", range: "> 5"}
+        ],
+        "Індекс забрудненості води": [
+            {limit: 1.0, col: "#28a745", lbl: "Чиста", range: "0 – 1.0"},
+            {limit: 2.5, col: "#ffc107", lbl: "Помірно", range: "1.0 – 2.5"},
+            {limit: 4.0, col: "#fd7e14", lbl: "Забруднена", range: "2.5 – 4.0"},
+            {limit: Infinity, col: "#dc3545", lbl: "Брудна", range: "> 4.0"}
+        ],
+        "Температура води": [
+            {limit: 10, col: "#17a2b8", lbl: "Холодна", range: "0 – 10"},
+            {limit: 20, col: "#28a745", lbl: "Норма", range: "10 – 20"},
+            {limit: 28, col: "#ffc107", lbl: "Тепла", range: "20 – 28"},
+            {limit: Infinity, col: "#dc3545", lbl: "Перегрів", range: "> 28"}
+        ],
+        "Розчинений кисень": [
+            {limit: 4, col: "#dc3545", lbl: "Низький", range: "0 – 4"},
+            {limit: 6, col: "#ffc107", lbl: "Середній", range: "4 – 6"},
+            {limit: 9, col: "#28a745", lbl: "Добрий", range: "6 – 9"},
+            {limit: Infinity, col: "#17a2b8", lbl: "Високий", range: "> 9"}
+        ],
+        "БСК₅": [
+            {limit: 3, col: "#28a745", lbl: "Чиста", range: "0 – 3"},
+            {limit: 5, col: "#ffc107", lbl: "Помірна", range: "3 – 5"},
+            {limit: 10, col: "#fd7e14", lbl: "Забруднена", range: "5 – 10"},
+            {limit: Infinity, col: "#dc3545", lbl: "Брудна", range: "> 10"}
+        ],
+        "Нафтопродукти": [
+            {limit: 0.05, col: "#28a745", lbl: "Норма", range: "0 – 0.05"},
+            {limit: 0.1, col: "#ffc107", lbl: "Допустимо", range: "0.05 – 0.1"},
+            {limit: 0.3, col: "#fd7e14", lbl: "Підвищено", range: "0.1 – 0.3"},
+            {limit: Infinity, col: "#dc3545", lbl: "Небезпечно", range: "> 0.3"}
+        ],
+        "Фосфати": [
+            {limit: 0.2, col: "#28a745", lbl: "Норма", range: "0 – 0.2"},
+            {limit: 0.5, col: "#ffc107", lbl: "Допустимо", range: "0.2 – 0.5"},
+            {limit: 1.0, col: "#fd7e14", lbl: "Підвищено", range: "0.5 – 1.0"},
+            {limit: Infinity, col: "#dc3545", lbl: "Високе", range: "> 1.0"}
+        ],
+        "Індекс забрудненості поверхневих вод": [
+            {limit: 1.0, col: "#28a745", lbl: "Чиста", range: "0 – 1.0"},
+            {limit: 2.5, col: "#ffc107", lbl: "Помірно", range: "1.0 – 2.5"},
+            {limit: 4.0, col: "#fd7e14", lbl: "Забруднена", range: "2.5 – 4.0"},
+            {limit: Infinity, col: "#dc3545", lbl: "Брудна", range: "> 4.0"}
+        ],
+        "Обсяг стічних вод": [
+            {limit: 100000, col: "#28a745", lbl: "Низький", range: "0 – 100 тис."},
+            {limit: 500000, col: "#ffc107", lbl: "Середній", range: "100 – 500 тис."},
+            {limit: 800000, col: "#fd7e14", lbl: "Високий", range: "500 – 800 тис."},
+            {limit: Infinity, col: "#dc3545", lbl: "Дуже високий", range: "> 800 тис."}
+        ],
+        "БСК₅ до очищення": [
+            {limit: 100, col: "#28a745", lbl: "Помірно", range: "0 – 100"},
+            {limit: 200, col: "#ffc107", lbl: "Високо", range: "100 – 200"},
+            {limit: 300, col: "#fd7e14", lbl: "Дуже високо", range: "200 – 300"},
+            {limit: Infinity, col: "#dc3545", lbl: "Критично", range: "> 300"}
+        ],
+        "БСК₅ після очищення": [
+            {limit: 15, col: "#28a745", lbl: "Добре", range: "0 – 15"},
+            {limit: 30, col: "#ffc107", lbl: "Допустимо", range: "15 – 30"},
+            {limit: 60, col: "#fd7e14", lbl: "Підвищено", range: "30 – 60"},
+            {limit: Infinity, col: "#dc3545", lbl: "Погано", range: "> 60"}
+        ],
+        "Вміст азоту": [
+            {limit: 10, col: "#28a745", lbl: "Норма", range: "0 – 10"},
+            {limit: 20, col: "#ffc107", lbl: "Допустимо", range: "10 – 20"},
+            {limit: 40, col: "#fd7e14", lbl: "Підвищено", range: "20 – 40"},
+            {limit: Infinity, col: "#dc3545", lbl: "Високе", range: "> 40"}
+        ],
+        "Вміст фосфору": [
+            {limit: 1, col: "#28a745", lbl: "Норма", range: "0 – 1"},
+            {limit: 3, col: "#ffc107", lbl: "Допустимо", range: "1 – 3"},
+            {limit: 6, col: "#fd7e14", lbl: "Підвищено", range: "3 – 6"},
+            {limit: Infinity, col: "#dc3545", lbl: "Високе", range: "> 6"}
+        ],
+        "Завислі речовини після очищення": [
+            {limit: 15, col: "#28a745", lbl: "Добре", range: "0 – 15"},
+            {limit: 30, col: "#ffc107", lbl: "Допустимо", range: "15 – 30"},
+            {limit: 60, col: "#fd7e14", lbl: "Підвищено", range: "30 – 60"},
+            {limit: Infinity, col: "#dc3545", lbl: "Високе", range: "> 60"}
+        ],
+        "Ефективність очищення стічних вод": [
+            {limit: 70, col: "#dc3545", lbl: "Низька", range: "0 – 70"},
+            {limit: 85, col: "#ffc107", lbl: "Середня", range: "70 – 85"},
+            {limit: 95, col: "#28a745", lbl: "Висока", range: "85 – 95"},
+            {limit: Infinity, col: "#17a2b8", lbl: "Дуже висока", range: "> 95"}
+        ],
+        "Індекс забруднення стічних вод": [
+            {limit: 1.0, col: "#28a745", lbl: "Низький", range: "0 – 1.0"},
+            {limit: 2.0, col: "#ffc107", lbl: "Середній", range: "1.0 – 2.0"},
+            {limit: 4.0, col: "#fd7e14", lbl: "Високий", range: "2.0 – 4.0"},
+            {limit: Infinity, col: "#dc3545", lbl: "Критичний", range: "> 4.0"}
+        ],
+
+        "Споживання електроенергії": [
+            {limit: 5000, col: "#28a745", lbl: "Низьке", range: "0 – 5 тис."},
+            {limit: 20000, col: "#ffc107", lbl: "Середнє", range: "5 – 20 тис."},
+            {limit: 50000, col: "#fd7e14", lbl: "Високе", range: "20 – 50 тис."},
+            {limit: Infinity, col: "#dc3545", lbl: "Дуже високе", range: "> 50 тис."}
+        ],
+        "Споживання теплової енергії": [
+            {limit: 100, col: "#28a745", lbl: "Низьке", range: "0 – 100"},
+            {limit: 250, col: "#ffc107", lbl: "Середнє", range: "100 – 250"},
+            {limit: 400, col: "#fd7e14", lbl: "Високе", range: "250 – 400"},
+            {limit: Infinity, col: "#dc3545", lbl: "Дуже високе", range: "> 400"}
+        ],
+        "Споживання води": [
+            {limit: 100, col: "#28a745", lbl: "Низьке", range: "0 – 100"},
+            {limit: 500, col: "#ffc107", lbl: "Середнє", range: "100 – 500"},
+            {limit: 1000, col: "#fd7e14", lbl: "Високе", range: "500 – 1000"},
+            {limit: Infinity, col: "#dc3545", lbl: "Дуже високе", range: "> 1000"}
+        ],
+        "Споживання газу": [
+            {limit: 5, col: "#28a745", lbl: "Низьке", range: "0 – 5"},
+            {limit: 10, col: "#ffc107", lbl: "Середнє", range: "5 – 10"},
+            {limit: 20, col: "#fd7e14", lbl: "Високе", range: "10 – 20"},
+            {limit: Infinity, col: "#dc3545", lbl: "Дуже високе", range: "> 20"}
+        ],
+        "Кількість користувачів будівлі": [
+            {limit: 500, col: "#28a745", lbl: "Мала", range: "0 – 500"},
+            {limit: 1500, col: "#ffc107", lbl: "Середня", range: "500 – 1500"},
+            {limit: 3000, col: "#fd7e14", lbl: "Висока", range: "1500 – 3000"},
+            {limit: Infinity, col: "#dc3545", lbl: "Дуже висока", range: "> 3000"}
+        ],
+        "Питоме енергоспоживання": [
+            {limit: 80, col: "#28a745", lbl: "Ефективне", range: "0 – 80"},
+            {limit: 120, col: "#ffc107", lbl: "Середнє", range: "80 – 120"},
+            {limit: 180, col: "#fd7e14", lbl: "Високе", range: "120 – 180"},
+            {limit: Infinity, col: "#dc3545", lbl: "Неефективне", range: "> 180"}
+        ],
+        "Середньомісячне споживання ресурсів": [
+            {limit: 100, col: "#28a745", lbl: "Низьке", range: "0 – 100"},
+            {limit: 200, col: "#ffc107", lbl: "Середнє", range: "100 – 200"},
+            {limit: 350, col: "#fd7e14", lbl: "Високе", range: "200 – 350"},
+            {limit: Infinity, col: "#dc3545", lbl: "Дуже високе", range: "> 350"}
+        ],
+        "Середня температура в приміщеннях": [
+            {limit: 18, col: "#17a2b8", lbl: "Низька", range: "0 – 18"},
+            {limit: 22, col: "#28a745", lbl: "Комфортна", range: "18 – 22"},
+            {limit: 26, col: "#ffc107", lbl: "Підвищена", range: "22 – 26"},
+            {limit: Infinity, col: "#dc3545", lbl: "Висока", range: "> 26"}
+        ],
+        "Кількість аудиторій": [
+            {limit: 20, col: "#28a745", lbl: "Мала", range: "0 – 20"},
+            {limit: 50, col: "#ffc107", lbl: "Середня", range: "20 – 50"},
+            {limit: 100, col: "#fd7e14", lbl: "Велика", range: "50 – 100"},
+            {limit: Infinity, col: "#dc3545", lbl: "Дуже велика", range: "> 100"}
+        ],
+        "Споживання енергії на одиницю площі": [
+            {limit: 80, col: "#28a745", lbl: "Ефективне", range: "0 – 80"},
+            {limit: 120, col: "#ffc107", lbl: "Середнє", range: "80 – 120"},
+            {limit: 180, col: "#fd7e14", lbl: "Високе", range: "120 – 180"},
+            {limit: Infinity, col: "#dc3545", lbl: "Неефективне", range: "> 180"}
+        ],
+        "Коефіцієнт енергоефективності": [
+            {limit: 0.4, col: "#dc3545", lbl: "Низький", range: "0 – 0.4"},
+            {limit: 0.7, col: "#ffc107", lbl: "Середній", range: "0.4 – 0.7"},
+            {limit: 0.9, col: "#28a745", lbl: "Високий", range: "0.7 – 0.9"},
+            {limit: Infinity, col: "#17a2b8", lbl: "Дуже високий", range: "> 0.9"}
+        ],
+        "Потенціал енергозбереження": [
+            {limit: 10, col: "#28a745", lbl: "Низький", range: "0 – 10"},
+            {limit: 20, col: "#ffc107", lbl: "Середній", range: "10 – 20"},
+            {limit: 35, col: "#fd7e14", lbl: "Високий", range: "20 – 35"},
+            {limit: Infinity, col: "#dc3545", lbl: "Дуже високий", range: "> 35"}
+        ],
+
+        "Пасажиропотік": [
+            {limit: 10000, col: "#28a745", lbl: "Низький", range: "0 – 10 тис."},
+            {limit: 40000, col: "#ffc107", lbl: "Середній", range: "10 – 40 тис."},
+            {limit: 80000, col: "#fd7e14", lbl: "Високий", range: "40 – 80 тис."},
+            {limit: Infinity, col: "#dc3545", lbl: "Критичний", range: "> 80 тис."}
+        ],
+        "Кількість прибулих поїздів": [
+            {limit: 30, col: "#28a745", lbl: "Мало", range: "0 – 30"},
+            {limit: 70, col: "#ffc107", lbl: "Середньо", range: "30 – 70"},
+            {limit: 120, col: "#fd7e14", lbl: "Багато", range: "70 – 120"},
+            {limit: Infinity, col: "#dc3545", lbl: "Дуже багато", range: "> 120"}
+        ],
+        "Кількість відправлених поїздів": [
+            {limit: 30, col: "#28a745", lbl: "Мало", range: "0 – 30"},
+            {limit: 70, col: "#ffc107", lbl: "Середньо", range: "30 – 70"},
+            {limit: 120, col: "#fd7e14", lbl: "Багато", range: "70 – 120"},
+            {limit: Infinity, col: "#dc3545", lbl: "Дуже багато", range: "> 120"}
+        ],
+        "Кількість працівників": [
+            {limit: 300, col: "#28a745", lbl: "Мало", range: "0 – 300"},
+            {limit: 1000, col: "#ffc107", lbl: "Середньо", range: "300 – 1000"},
+            {limit: 2000, col: "#fd7e14", lbl: "Багато", range: "1000 – 2000"},
+            {limit: Infinity, col: "#dc3545", lbl: "Дуже багато", range: "> 2000"}
+        ],
+        "Індекс транспортної активності": [
+            {limit: 0.8, col: "#28a745", lbl: "Низький", range: "0 – 0.8"},
+            {limit: 1.0, col: "#ffc107", lbl: "Середній", range: "0.8 – 1.0"},
+            {limit: 1.3, col: "#fd7e14", lbl: "Високий", range: "1.0 – 1.3"},
+            {limit: Infinity, col: "#dc3545", lbl: "Критичний", range: "> 1.3"}
+        ],
+        "Економічна активність об'єкта": [
+            {limit: 0.4, col: "#dc3545", lbl: "Низька", range: "0 – 0.4"},
+            {limit: 0.7, col: "#ffc107", lbl: "Середня", range: "0.4 – 0.7"},
+            {limit: 0.9, col: "#28a745", lbl: "Висока", range: "0.7 – 0.9"},
+            {limit: Infinity, col: "#17a2b8", lbl: "Дуже висока", range: "> 0.9"}
+        ],
+
+        "Кількість звернень пацієнтів": [
+            {limit: 100, col: "#28a745", lbl: "Низька", range: "0 – 100"},
+            {limit: 300, col: "#ffc107", lbl: "Середня", range: "100 – 300"},
+            {limit: 600, col: "#fd7e14", lbl: "Висока", range: "300 – 600"},
+            {limit: Infinity, col: "#dc3545", lbl: "Критична", range: "> 600"}
+        ],
+        "Рівень захворюваності": [
+            {limit: 5, col: "#28a745", lbl: "Норма", range: "0 – 5"},
+            {limit: 10, col: "#ffc107", lbl: "Помірний", range: "5 – 10"},
+            {limit: 20, col: "#fd7e14", lbl: "Підвищений", range: "10 – 20"},
+            {limit: Infinity, col: "#dc3545", lbl: "Критичний", range: "> 20"}
+        ],
+        "Кількість госпіталізацій": [
+            {limit: 30, col: "#28a745", lbl: "Низька", range: "0 – 30"},
+            {limit: 70, col: "#ffc107", lbl: "Середня", range: "30 – 70"},
+            {limit: 120, col: "#fd7e14", lbl: "Висока", range: "70 – 120"},
+            {limit: Infinity, col: "#dc3545", lbl: "Критична", range: "> 120"}
+        ],
+        "Показник інвалідності": [
+            {limit: 1, col: "#28a745", lbl: "Норма", range: "0 – 1"},
+            {limit: 2, col: "#ffc107", lbl: "Помірний", range: "1 – 2"},
+            {limit: 4, col: "#fd7e14", lbl: "Підвищений", range: "2 – 4"},
+            {limit: Infinity, col: "#dc3545", lbl: "Критичний", range: "> 4"}
+        ],
+        "Медико-демографічний показник": [
+            {limit: 5, col: "#28a745", lbl: "Норма", range: "0 – 5"},
+            {limit: 8, col: "#ffc107", lbl: "Задовільно", range: "5 – 8"},
+            {limit: 12, col: "#fd7e14", lbl: "Підвищено", range: "8 – 12"},
+            {limit: Infinity, col: "#dc3545", lbl: "Критично", range: "> 12"}
+        ],
+        "Ризик захворюваності населення": [
+            {limit: 0.005, col: "#28a745", lbl: "Низький", range: "0 – 0.005"},
+            {limit: 0.01, col: "#ffc107", lbl: "Помірний", range: "0.005 – 0.01"},
+            {limit: 0.05, col: "#fd7e14", lbl: "Підвищений", range: "0.01 – 0.05"},
+            {limit: Infinity, col: "#dc3545", lbl: "Високий", range: "> 0.05"}
+        ],
+        "Інтегральний показник стану здоров'я": [
+            {limit: 0.4, col: "#dc3545", lbl: "Низький", range: "0 – 0.4"},
+            {limit: 0.7, col: "#ffc107", lbl: "Середній", range: "0.4 – 0.7"},
+            {limit: 0.9, col: "#28a745", lbl: "Добрий", range: "0.7 – 0.9"},
+            {limit: Infinity, col: "#17a2b8", lbl: "Високий", range: "> 0.9"}
+        ],
+
+        "Обсяг твердих побутових відходів": [
+            {limit: 100, col: "#28a745", lbl: "Малий", range: "0 – 100"},
+            {limit: 500, col: "#ffc107", lbl: "Середній", range: "100 – 500"},
+            {limit: 1000, col: "#fd7e14", lbl: "Великий", range: "500 – 1000"},
+            {limit: Infinity, col: "#dc3545", lbl: "Дуже великий", range: "> 1000"}
+        ],
+        "Клас небезпеки відходів": [
+            {limit: 1, col: "#dc3545", lbl: "Надзвич.", range: "1"},
+            {limit: 2, col: "#fd7e14", lbl: "Високий", range: "2"},
+            {limit: 3, col: "#ffc107", lbl: "Помірний", range: "3"},
+            {limit: Infinity, col: "#28a745", lbl: "Малий", range: "4"}
+        ],
+        "Рівень токсичності": [
+            {limit: 500, col: "#28a745", lbl: "Низький", range: "0 – 500"},
+            {limit: 2000, col: "#ffc107", lbl: "Помірний", range: "500 – 2000"},
+            {limit: 5000, col: "#fd7e14", lbl: "Високий", range: "2000 – 5000"},
+            {limit: Infinity, col: "#dc3545", lbl: "Дуже високий", range: "> 5000"}
+        ],
+        "Обсяг викидів у повітря": [
+            {limit: 0.1, col: "#28a745", lbl: "Низький", range: "0 – 0.1"},
+            {limit: 0.5, col: "#ffc107", lbl: "Середній", range: "0.1 – 0.5"},
+            {limit: 1.0, col: "#fd7e14", lbl: "Високий", range: "0.5 – 1.0"},
+            {limit: Infinity, col: "#dc3545", lbl: "Критичний", range: "> 1.0"}
+        ],
+        "Індекс екологічної небезпеки": [
+            {limit: 0.3, col: "#28a745", lbl: "Низький", range: "0 – 0.3"},
+            {limit: 0.6, col: "#ffc107", lbl: "Середній", range: "0.3 – 0.6"},
+            {limit: 0.8, col: "#fd7e14", lbl: "Високий", range: "0.6 – 0.8"},
+            {limit: Infinity, col: "#dc3545", lbl: "Критичний", range: "> 0.8"}
+        ],
+        "Коефіцієнт утилізації відходів": [
+            {limit: 0.3, col: "#dc3545", lbl: "Низький", range: "0 – 0.3"},
+            {limit: 0.6, col: "#ffc107", lbl: "Середній", range: "0.3 – 0.6"},
+            {limit: 0.8, col: "#28a745", lbl: "Добрий", range: "0.6 – 0.8"},
+            {limit: Infinity, col: "#17a2b8", lbl: "Високий", range: "> 0.8"}
+        ],
+
+        "default": [
+            {limit: 10, col: "#28a745", lbl: "Низький", range: "0 – 10"},
+            {limit: 50, col: "#ffc107", lbl: "Середній", range: "10 – 50"},
+            {limit: 150, col: "#fd7e14", lbl: "Високий", range: "50 – 150"},
+            {limit: Infinity, col: "#dc3545", lbl: "Критичний", range: "> 150"}
+        ]
+    };
+
+    function buildColorScale(metricName) {
+        return colorScales[metricName] || colorScales["default"];
+    }
+
+    function getColorConfig(metric, value) {
+        const scale = buildColorScale(metric);
+        for (let i = 0; i < scale.length; i++) {
+            if (value <= scale[i].limit) {
+                return scale[i].col;
+            }
+        }
+        return scale[scale.length - 1].col;
+    }
+
+    function generateChart(canvasId, item) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+
+        const labels = [];
+        const values = [];
+        const bgColors = [];
+        const borderColors = [];
+        const normalizedValues = [];
+
+        for (const [key, val] of Object.entries(item.metrics)) {
+            if (typeof val !== 'number') continue;
+
+            labels.push(key.length > 32 ? key.substring(0, 30) + '...' : key);
+            values.push(val);
+
+            const color = getColorConfig(key, val);
+            bgColors.push(color + '99');
+            borderColors.push(color);
+
+            const scale = buildColorScale(key);
+            const refLimit = scale.length >= 2 ? scale[1].limit : 1;
+            const norm = refLimit === Infinity ? 100 : Math.min((val / refLimit) * 100, 200);
+            normalizedValues.push(norm);
+        }
+
+        if (labels.length === 0) return;
+
+        const height = Math.max(230, labels.length * 28 + 70);
+        canvas.parentElement.style.height = height + 'px';
+        canvas.height = height;
+
+        new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '% від допустимого рівня',
+                    data: normalizedValues,
+                    backgroundColor: bgColors,
+                    borderColor: borderColors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                return values[ctx.dataIndex] + ' (' + ctx.parsed.x.toFixed(1) + '% від допустимого рівня)';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: '% від допустимого рівня',
+                            font: { size: 10 }
+                        }
+                    },
+                    y: {
+                        ticks: { font: { size: 9 } }
+                    }
+                }
+            }
+        });
+    }
+
+    function initDashboard() {
+        const mapInstance = window[mapInstanceName];
+
+        if (!mapInstance) {
+            setTimeout(initDashboard, 100);
+            return;
+        }
+
+        currentMarkerGroup = L.layerGroup().addTo(mapInstance);
+        initLayerMenu();
+
+        const firstBtn = document.querySelector('.layer-panel .btn');
+        if (firstBtn) firstBtn.click();
+    }
+
+    function initLayerMenu() {
+        const menu = document.getElementById("layerMenu");
+        menu.innerHTML = "<b>Шари карти</b><hr style='margin:5px 0'>";
+
+        for (const [key, label] of Object.entries(mapLayersInfo)) {
+            const btn = document.createElement("button");
+            btn.className = "btn";
+            btn.innerHTML = label;
+            btn.onclick = () => selectLayer(key, btn);
+            menu.appendChild(btn);
+        }
+    }
+
+    function selectLayer(type, btnElement) {
+        document.querySelectorAll('.layer-panel .btn').forEach(b => b.classList.remove('active'));
+        btnElement.classList.add('active');
+        activeType = type;
+
+        let metricsSet = new Set();
+        mapData.filter(d => d.type === type).forEach(item => {
+            Object.keys(item.metrics).forEach(metricName => metricsSet.add(metricName));
+        });
+
+        const availableMetrics = Array.from(metricsSet);
+
+        if (availableMetrics.length > 0) {
+            activeMetric = availableMetrics[0];
+            renderMetricMenu(availableMetrics);
+            renderMap();
+        } else {
+            document.getElementById("metricMenu").style.display = "none";
+            document.getElementById("legendMenu").style.display = "none";
+            currentMarkerGroup.clearLayers();
+        }
+    }
+
+    function renderMetricMenu(metrics) {
+        const menu = document.getElementById("metricMenu");
+        menu.style.display = "block";
+        menu.innerHTML = "<b>Показник для фільтрації</b><hr style='margin:5px 0'>";
+
+        metrics.forEach(metricName => {
+            const label = document.createElement("label");
+            label.className = "metric-radio";
+
+            const radio = document.createElement("input");
+            radio.type = "radio";
+            radio.name = "metric";
+            radio.value = metricName;
+            radio.checked = metricName === activeMetric;
+
+            radio.onchange = () => {
+                activeMetric = metricName;
+                renderMap();
+            };
+
+            const span = document.createElement("span");
+            span.textContent = metricName;
+
+            label.appendChild(radio);
+            label.appendChild(span);
+            menu.appendChild(label);
+        });
+    }
+
+    function renderMap() {
+        currentMarkerGroup.clearLayers();
+
+        mapData.filter(d => d.type === activeType).forEach(item => {
+            if (item.metrics[activeMetric] === undefined) return;
+
+            const val = item.metrics[activeMetric];
+            const isNumeric = typeof val === 'number';
+
+            const color = isNumeric ? getColorConfig(activeMetric, val) : '#6c757d';
+            const displayVal = isNumeric && val < 0.01 && val > 0 ? val.toExponential(1) : val;
+
+            const strLen = String(displayVal).length;
+            const size = Math.max(42, strLen * 8 + 18);
+
+            const iconHtml = `
+                <div class='dynamic-marker'
+                     style='background-color:${color}; width:${size}px; height:${size}px;'>
+                    ${displayVal}
+                </div>
+            `;
+
+            const customIcon = L.divIcon({
+                html: iconHtml,
+                className: '',
+                iconSize: [size, size],
+                iconAnchor: [size / 2, size / 2]
+            });
+
+            let popupText = `<b>${item.name}</b><br><hr style='margin:5px 0'>`;
+
+            for (let [k, v] of Object.entries(item.metrics)) {
+                popupText += `${k}: <b>${v}</b><br>`;
+            }
+
+            const chartId = 'chart_' + (chartCounter++);
+
+            popupText += `
+                <div class='popup-chart-container'>
+                    <b>Графік паспортних показників</b>
+                    <div style='position:relative; width:100%; height:260px;'>
+                        <canvas id='${chartId}'></canvas>
+                    </div>
+                </div>
+            `;
+
+            const marker = L.marker(item.loc, { icon: customIcon })
+                .bindPopup(popupText, { maxWidth: 430, minWidth: 410 })
+                .addTo(currentMarkerGroup);
+
+            marker._chartData = {
+                canvasId: chartId,
+                item: item
+            };
+
+            marker.on('popupopen', function () {
+                setTimeout(() => {
+                    generateChart(this._chartData.canvasId, this._chartData.item);
+                }, 120);
+            });
+        });
+
+        renderLegend();
+    }
+
+    function renderLegend() {
+        const legend = document.getElementById("legendMenu");
+        legend.style.display = "block";
+        legend.innerHTML = `<b>${activeMetric}</b><hr style='margin:5px 0'>`;
+
+        const hasNonNumeric = mapData
+            .filter(d => d.type === activeType)
+            .some(item => item.metrics[activeMetric] !== undefined && typeof item.metrics[activeMetric] !== 'number');
+
+        if (hasNonNumeric) {
+            legend.innerHTML += `
+                <div class='legend-row' style='background-color:#6c757d'>
+                    <span>Текстове значення</span>
+                    <span>—</span>
+                </div>
+            `;
+            return;
+        }
+
+        const scale = buildColorScale(activeMetric);
+
+        scale.forEach(s => {
+            legend.innerHTML += `
+                <div class='legend-row' style='background-color:${s.col}'>
+                    <span>${s.lbl}</span>
+                    <span style='font-size:11px;'>${s.range}</span>
+                </div>
+            `;
+        });
+    }
+
+    initDashboard();
+</script>
+    
+            <div class="folium-map" id="map_1b762d721418ae766d26310f0fa1f692" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_1b762d721418ae766d26310f0fa1f692 = L.map(
+                "map_1b762d721418ae766d26310f0fa1f692",
+                {
+                    center: [50.4501, 30.5234],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 11,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_4c6fee1e75c7a3bd271521918dccc2d9 = L.tileLayer(
+                "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 20,
+  "maxNativeZoom": 20,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors \u0026copy; \u003ca href=\"https://carto.com/attributions\"\u003eCARTO\u003c/a\u003e",
+  "subdomains": "abcd",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_4c6fee1e75c7a3bd271521918dccc2d9.addTo(map_1b762d721418ae766d26310f0fa1f692);
+        
+</script>
+</html>
